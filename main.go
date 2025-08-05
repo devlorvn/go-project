@@ -19,7 +19,7 @@ func main() {
 
 	sm := http.NewServeMux()
 	sm.Handle("/hello", hh)
-	sm.Handle("/product", ph)
+	sm.Handle("/product/", ph)
 	s := &http.Server{
 		Addr:         ":9090",
 		Handler:      sm,
@@ -27,7 +27,6 @@ func main() {
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
 	}
-	s.ListenAndServe()
 
 	go func() {
 		err := s.ListenAndServe()
@@ -43,7 +42,7 @@ func main() {
 	sig := <-sigChan
 	l.Println("Received terminate, graceful shutdown", sig)
 
-	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 
-	s.Shutdown(tc)
+	s.Shutdown(ctx)
 }
