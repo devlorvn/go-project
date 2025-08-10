@@ -21,10 +21,11 @@ func main() {
 	sm := mux.NewRouter()
 
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
-	getRouter.HandleFunc("/products", ph.GetProducts)
+	getRouter.HandleFunc("/products", ph.FindMany)
+	getRouter.HandleFunc("/products/{id:[0-9]+}", ph.FindMany)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
-	postRouter.HandleFunc("/products", ph.AddProduct)
+	postRouter.HandleFunc("/products", ph.CreateProduct)
 	postRouter.Use(ph.MiddlewareProductValidation)
 
 	putRouter := sm.Methods(http.MethodPut).Subrouter()
@@ -43,12 +44,14 @@ func main() {
 		err := s.ListenAndServe()
 		if err != nil {
 			l.Fatal(err)
+			os.IsExist(err)
 		}
+		l.Println("Starting server on port 9090")
 	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
-	signal.Notify(sigChan, os.Kill)
+	// signal.Notify(sigChan, os.Kill)
 
 	sig := <-sigChan
 	l.Println("Received terminate, graceful shutdown", sig)

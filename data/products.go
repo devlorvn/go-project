@@ -1,72 +1,73 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"time"
 )
+
+var ErrProductNotFound = fmt.Errorf("Product not found")
 
 type Product struct {
 	Id          int     `json:"id"`
-	Name        string  `json:"name"`
+	Name        string  `json:"name" validate:"required"`
 	Description string  `json:"desc"`
 	Price       float32 `json:"price"`
 	SKU         string  `json:"sku"`
-	CreatedAt   string  `json:"-"`
-	UpdatedAt   string  `json:"-"`
-	DeletedAt   string  `json:"-"`
-}
-
-func (p *Product) FromJSON(r io.Reader) error {
-	e := json.NewDecoder(r)
-
-	return e.Decode(p)
 }
 
 type Products []*Product
 
-func (p *Products) ToJson(w io.Writer) error {
-	e := json.NewEncoder(w)
-
-	return e.Encode(p)
-}
-
-func GetProduct() Products {
+func GetProducts() Products {
 	return productLists
 }
 
-func AddProduct(p *Product) {
+func GetProductById(id int) (*Product, error) {
+	i := findIndexByProductId(id)
+
+	if i == -1 {
+		return nil, ErrProductNotFound
+	}
+
+	return productLists[i], nil
+}
+
+func AddProduct(p Product) {
 	p.Id = getNextId()
-	productLists = append(productLists, p)
+	productLists = append(productLists, &p)
 }
 
-func UpdateProduct(id int, p *Product) error {
-	_, pos, err := findProduct(id)
-
-	if err != nil {
-		return err
+func UpdateProduct(p Product) error {
+	i := findIndexByProductId(p.Id)
+	if i == -1 {
+		return ErrProductNotFound
 	}
-	p.Id = id
-	productLists[pos] = p
+
+	productLists[i] = &p
 	return nil
-}
-
-var ErrProductNotFound = fmt.Errorf("Product not found")
-
-func findProduct(id int) (*Product, int, error) {
-	for i, p := range productLists {
-		if p.Id == id {
-			return p, i, nil
-		}
-	}
-
-	return nil, -1, ErrProductNotFound
 }
 
 func getNextId() int {
 	lastP := productLists[len(productLists)-1]
 	return lastP.Id + 1
+}
+
+func DeleteProduct(id int) error {
+	i := findIndexByProductId(id)
+	if i == -1 {
+		return ErrProductNotFound
+	}
+
+	productLists = append(productLists[:i], productLists[i+1])
+
+	return nil
+}
+
+func findIndexByProductId(id int) int {
+	for i, p := range productLists {
+		if p.Id == id {
+			return i
+		}
+	}
+	return -1
 }
 
 var productLists = []*Product{
@@ -76,8 +77,6 @@ var productLists = []*Product{
 		Description: "Frothy milky coffee",
 		Price:       2.34,
 		SKU:         "pro001",
-		CreatedAt:   time.Now().UTC().String(),
-		UpdatedAt:   time.Now().UTC().String(),
 	},
 	{
 		Id:          2,
@@ -85,7 +84,5 @@ var productLists = []*Product{
 		Description: "Short and strong coffee without milk",
 		Price:       2.34,
 		SKU:         "pro001",
-		CreatedAt:   time.Now().UTC().String(),
-		UpdatedAt:   time.Now().UTC().String(),
 	},
 }
