@@ -1,62 +1,51 @@
 package main
 
 import (
-	"context"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
+	"encoding/json"
+	"fmt"
 	"time"
-
-	"github.com/gorilla/mux"
-
-	"github.com/devlorvn/go-project/handlers"
 )
 
+type TodoItem struct {
+	Id    int    `json:"id"`
+	Title string `json:"title"`
+	// Image
+	Description string     `json:"description"`
+	Status      string     `json:"status"`
+	CreatedAt   *time.Time `json:"created_at"`
+	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
+}
+
 func main() {
-	l := log.New(os.Stdout, "product-api ", log.LstdFlags)
+	fmt.Println("Hello world!!!!")
 
-	ph := handlers.NewProducts(l)
+	now := time.Now().UTC()
 
-	sm := mux.NewRouter()
-
-	getRouter := sm.Methods(http.MethodGet).Subrouter()
-	getRouter.HandleFunc("/products", ph.FindMany)
-	getRouter.HandleFunc("/products/{id:[0-9]+}", ph.FindMany)
-
-	postRouter := sm.Methods(http.MethodPost).Subrouter()
-	postRouter.HandleFunc("/products", ph.CreateProduct)
-	postRouter.Use(ph.MiddlewareProductValidation)
-
-	putRouter := sm.Methods(http.MethodPut).Subrouter()
-	putRouter.HandleFunc("/products/{id:[0-9]+}", ph.UpdateProduct)
-	putRouter.Use(ph.MiddlewareProductValidation)
-
-	s := &http.Server{
-		Addr:         ":9090",
-		Handler:      sm,
-		IdleTimeout:  120 * time.Second,
-		ReadTimeout:  1 * time.Second,
-		WriteTimeout: 1 * time.Second,
+	item := TodoItem{
+		Id:          1,
+		Title:       "Item 1",
+		Description: "Desc 1",
+		Status:      "Doing",
+		CreatedAt:   &now,
+		UpdatedAt:   nil,
 	}
 
-	go func() {
-		err := s.ListenAndServe()
-		if err != nil {
-			l.Fatal(err)
-			os.IsExist(err)
-		}
-		l.Println("Starting server on port 9090")
-	}()
+	jsonData, err := json.Marshal(item)
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt)
-	// signal.Notify(sigChan, os.Kill)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	sig := <-sigChan
-	l.Println("Received terminate, graceful shutdown", sig)
+	fmt.Println(string(jsonData))
 
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	jsonStr := `{"id":1,"title":"Item 1","description":"Desc 1","status":"Doing","created_at":"2025-08-12T06:46:25.1694938Z","updated_at":null}`
 
-	s.Shutdown(ctx)
+	var item2 TodoItem
+
+	if err := json.Unmarshal([]byte(jsonStr), &item2); err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(item2)
 }
