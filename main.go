@@ -1,9 +1,15 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"log"
+	"net/http"
+	"os"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 type TodoItem struct {
@@ -16,36 +22,69 @@ type TodoItem struct {
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
 }
 
+type TodoItemCreation struct {
+	Id          int    `json:"-" gorm:"column:id;"`
+	Title       string `json:"title" gorm:"column:title;"`
+	Description string `json:"description" gorm:"column:description;"`
+	Status      string `json:"status" gorm:"column:status;"`
+}
+
+func (TodoItemCreation) TableName() string { return "todo_items" }
+
 func main() {
-	fmt.Println("Hello world!!!!")
-
-	now := time.Now().UTC()
-
-	item := TodoItem{
-		Id:          1,
-		Title:       "Item 1",
-		Description: "Desc 1",
-		Status:      "Doing",
-		CreatedAt:   &now,
-		UpdatedAt:   nil,
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
 	}
-
-	jsonData, err := json.Marshal(item)
+	dsn := os.Getenv("DB_CONN_STR")
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
 
-	fmt.Println(string(jsonData))
+	r := gin.Default()
 
-	jsonStr := `{"id":1,"title":"Item 1","description":"Desc 1","status":"Doing","created_at":"2025-08-12T06:46:25.1694938Z","updated_at":null}`
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+		})
+	})
 
-	var item2 TodoItem
+	v1 := r.Group("/v1")
 
-	if err := json.Unmarshal([]byte(jsonStr), &item2); err != nil {
-		fmt.Println(err)
-		return
+	{
+		items := v1.Group("/items")
+		{
+			items.POST("", CreateItem(db))
+			items.GET("")
+			items.GET("/:id")
+			items.PATCH("/:id")
+			items.DELETE("/:id")
+		}
 	}
-	fmt.Println(item2)
+
+	r.Run(":3000")
+}
+
+func CreateItem(db *gorm.DB) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		var data TodoItemCreation
+		if err := c.ShouldBindJSON(&data); err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		if err := db.Create(&data).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"err": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"id": data.Id,
+		})
+	}
 }

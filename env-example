@@ -1,0 +1,1 @@
+DB_CONN_STR=user:pass@tcp(127.0.0.1:3306)/todo_app?charset=utf8mb4&parseTime=True&loc=Local
