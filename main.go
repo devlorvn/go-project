@@ -1,12 +1,14 @@
 package main
 
 import (
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,8 +27,8 @@ const (
 
 var allItemStatuses = [3]string{"doing", "done", "deleted"}
 
-func (item ItemStatus) String() string {
-	return allItemStatuses[item]
+func (item *ItemStatus) String() string {
+	return allItemStatuses[*item]
 }
 
 func parseStr2ItemStatus(s string) (ItemStatus, error) {
@@ -57,8 +59,32 @@ func (status *ItemStatus) Scan(value interface{}) error {
 	return nil
 }
 
+func (item *ItemStatus) Value() (driver.Value, error) {
+	if item == nil {
+		return nil, nil
+	}
+
+	return item.String(), nil
+}
+
 func (status *ItemStatus) MarshalJSON() ([]byte, error) {
+	if status == nil {
+		return nil, nil
+	}
 	return []byte(fmt.Sprintf("\"%s\"", status.String())), nil
+}
+
+func (status *ItemStatus) UnmarshalJSON(data []byte) error {
+	str := strings.ReplaceAll(string(data), "\"", "")
+
+	itemValue, err := parseStr2ItemStatus(str)
+	if err != nil {
+		return err
+	}
+
+	*status = itemValue
+
+	return nil
 }
 
 type TodoItem struct {
@@ -74,18 +100,18 @@ type TodoItem struct {
 func (TodoItem) TableName() string { return "todo_items" }
 
 type TodoItemCreation struct {
-	Id          int    `json:"-" gorm:"column:id;"`
-	Title       string `json:"title" gorm:"column:title;"`
-	Description string `json:"description" gorm:"column:description;"`
-	Status      string `json:"status" gorm:"column:status;"`
+	Id          int         `json:"-" gorm:"column:id;"`
+	Title       string      `json:"title" gorm:"column:title;"`
+	Description string      `json:"description" gorm:"column:description;"`
+	Status      *ItemStatus `json:"status" gorm:"column:status;"`
 }
 
 func (TodoItemCreation) TableName() string { return TodoItem{}.TableName() }
 
 type TodoItemUpdate struct {
-	Title       *string `json:"title" gorm:"column:title;"`
-	Description *string `json:"description" gorm:"column:description;"`
-	Status      *string `json:"status" gorm:"column:status;"`
+	Title       *string     `json:"title" gorm:"column:title;"`
+	Description *string     `json:"description" gorm:"column:description;"`
+	Status      *ItemStatus `json:"status" gorm:"column:status;"`
 }
 
 func (TodoItemUpdate) TableName() string { return TodoItem{}.TableName() }
