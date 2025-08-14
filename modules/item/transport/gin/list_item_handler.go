@@ -38,9 +38,7 @@ func ListItem(db *gorm.DB) func(c *gin.Context) {
 
 		data, err := biz.ListItem(c.Request.Context(), &filter, &paging)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
 

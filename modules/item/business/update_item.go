@@ -3,6 +3,7 @@ package business
 import (
 	"context"
 
+	"github.com/devlorvn/go-project/common"
 	"github.com/devlorvn/go-project/modules/item/model"
 )
 
@@ -22,15 +23,18 @@ func NewUpdateItemBusiness(store UpdateItemStorage) *updateItemBusiness {
 func (biz updateItemBusiness) UpdateItemById(ctx context.Context, id int, updateData *model.TodoItemUpdate) error {
 	item, err := biz.store.GetItem(ctx, map[string]interface{}{"id": id})
 	if err != nil {
-		return err
+		if err == common.RecordNotFound {
+			return common.ErrCannotGetEntity(model.EntityName, err)
+		}
+		return common.ErrCannotUpdateEntity(model.EntityName, err)
 	}
 
 	if item.Status != nil && *item.Status == model.ItemStatusDeleted {
-		return model.ErrItemIsDeleted
+		return common.ErrEntityDeleted(model.EntityName, model.ErrItemIsDeleted)
 	}
 
 	if err := biz.store.UpdateItem(ctx, map[string]interface{}{"id": id}, updateData); err != nil {
-		return err
+		return common.ErrCannotUpdateEntity(model.EntityName, err)
 	}
 
 	return nil

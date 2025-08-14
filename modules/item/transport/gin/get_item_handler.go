@@ -28,9 +28,7 @@ func GetItem(db *gorm.DB) func(c *gin.Context) {
 
 		data, err := biz.GetItemById(c.Request.Context(), id)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
 		c.JSON(http.StatusOK, common.SimpleSuccessResponse(data))

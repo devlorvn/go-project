@@ -6,6 +6,10 @@ import (
 	"github.com/devlorvn/go-project/common"
 )
 
+const (
+	EntityName = "Item"
+)
+
 var (
 	ErrTitleIsBlank  = errors.New("title cannot be blank")
 	ErrItemIsDeleted = errors.New("Item has been deleted")

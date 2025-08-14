@@ -37,9 +37,7 @@ func UpdateItem(db *gorm.DB) func(c *gin.Context) {
 		biz := business.NewUpdateItemBusiness(storage)
 
 		if err := biz.UpdateItemById(c.Request.Context(), id, &data); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusInternalServerError, err)
 			return
 		}
 

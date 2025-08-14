@@ -3,7 +3,9 @@ package business
 import (
 	"context"
 
+	"github.com/devlorvn/go-project/common"
 	"github.com/devlorvn/go-project/modules/item/model"
+
 )
 
 type GetItemStorage interface {
@@ -21,7 +23,7 @@ func NewGetItemBusiness(store GetItemStorage) *getItemBusiness {
 func (biz getItemBusiness) GetItemById(ctx context.Context, id int) (*model.TodoItem, error) {
 	item, err := biz.store.GetItem(ctx, map[string]interface{}{"id": id})
 	if err != nil {
-		return nil, err
+		return nil, common.ErrCannotGetEntity(model.EntityName, err)
 	}
 	return item, nil
 }

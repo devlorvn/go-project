@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/devlorvn/go-project/common"
 	"github.com/devlorvn/go-project/modules/item/model"
 )
 
@@ -27,7 +28,7 @@ func (biz createItemBusiness) CreateNewItem(ctx context.Context, data *model.Tod
 	}
 
 	if err := biz.store.CreateItem(ctx, data); err != nil {
-		return err
+		return common.ErrCannotCreateEntity(model.EntityName, err)
 	}
 
 	return nil
