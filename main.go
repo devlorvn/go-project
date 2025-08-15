@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
+	"github.com/devlorvn/go-project/common"
+	"github.com/devlorvn/go-project/middleware"
 	ginitem "github.com/devlorvn/go-project/modules/item/transport/gin"
 )
 
@@ -26,7 +29,14 @@ func main() {
 
 	r := gin.Default()
 
+	r.Use(middleware.Recovery())
+
 	r.GET("/ping", func(c *gin.Context) {
+
+		go func() { // ví dụ recovery khi tạo goroutine
+			defer common.Recovery()
+			fmt.Println([]int{}[0])
+		}()
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})

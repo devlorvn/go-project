@@ -81,7 +81,7 @@ func ErrInvalidRequest(err error) *AppError {
 	)
 }
 
-func ErInternal(err error) *AppError {
+func ErrInternal(err error) *AppError {
 	return NewFullErrorResponse(
 		http.StatusInternalServerError,
 		err,
